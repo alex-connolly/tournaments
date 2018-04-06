@@ -86,6 +86,8 @@ contract SingleElimTournament {
 
         require(t.status == TournamentStatus.Open);
 
+        require(_contains(t.players, msg.sender));
+
         // must be different to current bracket
         if (bracket.length == t.proposedBracket.length) {
             bool flag = false;
@@ -110,9 +112,12 @@ contract SingleElimTournament {
 
         Tournament storage t = tournaments[id];
 
+
         require(t.status == TournamentStatus.Open);
 
         require(index <= t.proposedIndex);
+
+        // doesn't matter if non-players approve here
 
         t.approvedBracket[msg.sender] = index;
     }
@@ -150,6 +155,7 @@ contract SingleElimTournament {
 
         // check it's not just blank
         if (index == 0) {
+            require(t.players.length > 0);
             require(t.players[0] == msg.sender);
         }
 
@@ -168,6 +174,15 @@ contract SingleElimTournament {
 
         msg.sender.transfer(toPay);
 
+    }
+
+    function _contains(address[] addresses, address target) internal pure returns (bool) {
+        for (uint i = 0; i < addresses.length; i++) {
+            if (addresses[i] == target) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
