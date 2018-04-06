@@ -15,6 +15,10 @@ contract SingleElimTournament {
     }
 
     event BracketProposed(uint id, address proposer, uint index, address[] bracket);
+    event TournamentCreated(uint id, uint bond, uint maxPlayers);
+    event TournamentJoined(uint id, address player);
+    event TournamentClosed(uint id, address[] bracket);
+    event TournamentPaid(uint id, address to, uint percentage);
 
     function getTournament(uint id) external view returns (
         uint bond, 
@@ -37,7 +41,7 @@ contract SingleElimTournament {
         Closed
     }
 
-    Tournament[] tournaments;
+    Tournament[] public tournaments;
 
     function createTournament(uint requiredBond, uint maxPlayers, uint8[] percentages) external returns (uint) {
 
@@ -57,10 +61,12 @@ contract SingleElimTournament {
 
         uint id = tournaments.push(t) - 1;
 
+        TournamentCreated(id, t.bond, t.maxPlayers);
+
         return id;
     }
 
-    function joinTournament(uint id) external {
+    function joinTournament(uint id) external payable {
         Tournament storage t = tournaments[id];
 
         require(msg.value >= t.bond);
@@ -70,11 +76,15 @@ contract SingleElimTournament {
         require(t.players.length < t.maxPlayers);
 
         t.players.push(msg.sender);
+
+        TournamentJoined(id, msg.sender);
     }
 
     function proposeBracket(uint id, address[] bracket) external {
         
         Tournament storage t = tournaments[id];
+
+        require(t.status == TournamentStatus.Open);
 
         // must be different to current bracket
         if (bracket.length == t.proposedBracket.length) {
@@ -121,6 +131,8 @@ contract SingleElimTournament {
         }   
 
         t.status = TournamentStatus.Closed;
+
+        TournamentClosed(id, t.proposedBracket);
     }
 
     function payout(uint id) external {
@@ -148,6 +160,8 @@ contract SingleElimTournament {
         uint total = t.players.length * t.bond;
 
         uint toPay = (total * t.percentages[index]) / 100;
+
+        TournamentPaid(id, msg.sender, t.percentages[index]);
 
         // watch reentracy
         t.percentages[index] = 0;
