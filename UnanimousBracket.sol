@@ -1,7 +1,7 @@
 pragma solidity 0.4.18;
 
 
-contract SingleElimTournament {
+contract UnanimousBracketTournament {
 
     struct Tournament {
         uint bond;
@@ -74,6 +74,8 @@ contract SingleElimTournament {
         require(t.status == TournamentStatus.Open);
 
         require(t.players.length < t.maxPlayers);
+
+        require(!_contains(t.players, msg.sender));
 
         t.players.push(msg.sender);
 
